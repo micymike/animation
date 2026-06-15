@@ -9,7 +9,7 @@ from typing import Optional
 import pdfplumber
 import numpy as np
 from tiktoken import encoding_for_model
-from fastembed import TextEmbedding
+from sentence_transformers import SentenceTransformer
 
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 EMBED_DIM = 384
@@ -23,22 +23,16 @@ _enc = encoding_for_model("gpt-3.5-turbo")
 _embedder = None
 
 
-def _get_embedder() -> TextEmbedding:
+def _get_embedder() -> SentenceTransformer:
     global _embedder
     if _embedder is None:
-        _embedder = TextEmbedding(model_name=EMBED_MODEL, max_length=512)
+        _embedder = SentenceTransformer(EMBED_MODEL, truncate_dim=512)
     return _embedder
 
 
-def _local_embed(texts: list[str]) -> list[list[float]]:
+def _local_embed(texts: list[str]) -> np.ndarray:
     embedder = _get_embedder()
-    return [list(vec) for vec in embedder.embed(texts)]
-
-
-def _l2_normalize(arr: np.ndarray) -> np.ndarray:
-    norms = np.linalg.norm(arr, axis=1, keepdims=True)
-    norms[norms == 0] = 1
-    return arr / norms
+    return embedder.encode(texts, normalize_embeddings=True, show_progress_bar=False)
 
 
 def _num_tokens(text: str) -> int:
@@ -101,12 +95,10 @@ def build_index(pdf_path: str, force_rebuild=False):
         batch = texts[i:i + batch_size]
         print(f"  Batch {i // batch_size + 1}/{(len(texts) - 1) // batch_size + 1} ({len(batch)} texts)")
         emb = _local_embed(batch)
-        all_embeddings.extend(emb)
+        all_embeddings.append(emb)
 
-    embeddings = np.array(all_embeddings).astype("float32")
+    embeddings = np.concatenate(all_embeddings, axis=0).astype("float32")
     print(f"Embedding shape: {embeddings.shape}")
-
-    embeddings = _l2_normalize(embeddings)
 
     np.save(str(EMBEDDINGS_FILE), embeddings)
     with open(CHUNKS_FILE, "wb") as f:
@@ -130,10 +122,7 @@ def search(query: str, k: int = 5) -> list[dict]:
     if embeddings is None:
         return [{"text": "No index found. Run build_index() first.", "score": 0, "source": "system"}]
 
-    emb = _local_embed([query])
-    query_vec = np.array(emb).astype("float32")
-    query_vec = _l2_normalize(query_vec)
-
+    query_vec = _local_embed([query]).astype("float32")
     similarities = np.dot(embeddings, query_vec.T).flatten()
     top_k = np.argsort(similarities)[::-1][:k]
 
