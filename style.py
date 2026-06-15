@@ -7,6 +7,26 @@ CSS = """
 
     .stApp {
         background: linear-gradient(135deg, #0c0f1a 0%, #1a1a2e 50%, #0c0f1a 100%);
+        color: #f1f5f9 !important;
+    }
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stVerticalBlock"],
+    [data-testid="stHorizontalBlock"] {
+        background: transparent !important;
+        color: #f1f5f9 !important;
+    }
+    [data-testid="stMarkdownContainer"] {
+        color: inherit !important;
+    }
+    header[data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    #MainMenu {
+        display: none !important;
+    }
+    .block-container {
+        padding-top: 1.25rem !important;
     }
 
     .main-header {
@@ -167,6 +187,28 @@ CSS = """
         border-color: #16a34a !important;
         box-shadow: 0 0 0 2px rgba(22,163,74,0.12) !important;
     }
+    [data-testid="stChatInput"] {
+        background: transparent !important;
+    }
+    [data-testid="stChatInput"] > div {
+        background: #111827 !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stChatInput"] textarea,
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #e2e8f0 !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
+    }
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
+    }
+    [data-testid="stChatInput"] button {
+        background: rgba(34,197,94,0.14) !important;
+        color: #86efac !important;
+    }
 
     .stSelectbox>div>div {
         background: rgba(255,255,255,0.04) !important;
@@ -211,6 +253,7 @@ CSS = """
         padding: 10px 14px; border-radius: 12px;
         margin-bottom: 8px; font-size: 0.85rem; line-height: 1.6;
         animation: fadeSlideIn 0.3s ease;
+        overflow: hidden;
     }
     .chat-message.user {
         background: rgba(96,165,250,0.1);
@@ -220,20 +263,32 @@ CSS = """
     .chat-message.assistant {
         background: rgba(255,255,255,0.03);
         border: 1px solid rgba(255,255,255,0.06);
-        color: #e2e8f0;
+        color: #f1f5f9 !important;
     }
     .chat-message h1, .chat-message h2, .chat-message h3 {
         font-size: 1rem;
         line-height: 1.35;
         margin: 6px 0 8px;
-        color: #f8fafc;
+        color: #f8fafc !important;
     }
-    .chat-message p { margin: 6px 0; }
+    .chat-message .msg-content {
+        color: #f1f5f9 !important;
+    }
+    .chat-message p,
+    .chat-message .msg-line {
+        margin: 6px 0;
+        color: #f1f5f9 !important;
+    }
     .chat-message ul, .chat-message ol {
         margin: 6px 0 8px 1.1rem;
         padding-left: 0.9rem;
+        color: #f1f5f9 !important;
     }
-    .chat-message li { margin: 4px 0; }
+    .chat-message li {
+        margin: 4px 0;
+        color: #f1f5f9 !important;
+    }
+    .chat-message strong { color: #ffffff !important; }
     .chat-message a { color: #60a5fa; }
     .chat-message .msg-label {
         font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
@@ -241,7 +296,11 @@ CSS = """
     }
     .chat-message.user .msg-label { color: #60a5fa; }
     .chat-message.assistant .msg-label { color: #2ecc71; }
-    .answer-muted { color: #94a3b8; font-size: 0.78rem; }
+    .answer-muted {
+        color: #cbd5e1 !important;
+        font-size: 0.78rem;
+        margin-top: 8px;
+    }
     @keyframes fadeSlideIn {
         from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }

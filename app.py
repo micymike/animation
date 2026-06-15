@@ -30,11 +30,75 @@ _SUGGESTIONS = [
 ]
 
 
-def _message_start(msg: dict) -> str:
+def _inline_markdown(text: str) -> str:
+    text = html.escape(text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
+    return text
+
+
+def _markdown_to_html(text: str) -> str:
+    lines = text.splitlines()
+    output = []
+    list_type = None
+
+    def close_list():
+        nonlocal list_type
+        if list_type:
+            output.append(f"</{list_type}>")
+            list_type = None
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            close_list()
+            continue
+
+        heading = re.match(r"^(#{1,3})\s+(.+)$", line)
+        numbered = re.match(r"^\d+\.\s+(.+)$", line)
+        bullet = re.match(r"^[-*]\s+(.+)$", line)
+        citation = re.match(r"^\[\d+\]:\s*(.+)$", line)
+
+        if heading:
+            close_list()
+            level = len(heading.group(1))
+            output.append(f"<h{level}>{_inline_markdown(heading.group(2))}</h{level}>")
+        elif numbered:
+            if list_type != "ol":
+                close_list()
+                output.append("<ol>")
+                list_type = "ol"
+            output.append(f"<li>{_inline_markdown(numbered.group(1))}</li>")
+        elif bullet:
+            if list_type != "ul":
+                close_list()
+                output.append("<ul>")
+                list_type = "ul"
+            output.append(f"<li>{_inline_markdown(bullet.group(1))}</li>")
+        elif citation:
+            close_list()
+            output.append(f'<div class="answer-muted">{_inline_markdown(raw_line)}</div>')
+        else:
+            close_list()
+            output.append(f'<div class="msg-line">{_inline_markdown(line)}</div>')
+
+    close_list()
+    return "".join(output)
+
+
+def _render_message(msg: dict) -> str:
     label = "You" if msg["role"] == "user" else "Finance Bill AI"
+    if msg["role"] == "assistant":
+        raw_content = msg["content"]
+        content = raw_content if "<" in raw_content and ">" in raw_content else _markdown_to_html(raw_content)
+    else:
+        content = f'<div class="msg-line">{html.escape(msg["content"])}</div>'
+
     return (
         f'<div class="chat-message {msg["role"]}">'
         f'<div class="msg-label">{label}</div>'
+        f'<div class="msg-content">{content}</div>'
+        "</div>"
     )
 
 
@@ -81,7 +145,7 @@ def _looks_like_canned_copilot_reply(reply: str) -> bool:
 
 
 def _format_copilot_reply(reply: str) -> str:
-    return f"{reply}\n\n<span class=\"answer-muted\">Answered through Copilot Studio.</span>"
+    return f'{_markdown_to_html(reply)}<div class="answer-muted">Answered through Copilot Studio.</div>'
 
 
 def _format_local_fallback(reply: str, reason: str) -> str:
@@ -198,12 +262,7 @@ with chat_col:
     chat_container = st.container(height=480)
     with chat_container:
         for msg in st.session_state.messages:
-            st.markdown(_message_start(msg), unsafe_allow_html=True)
-            if msg["role"] == "assistant":
-                st.markdown(msg["content"], unsafe_allow_html=True)
-            else:
-                st.markdown(html.escape(msg["content"]), unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(_render_message(msg), unsafe_allow_html=True)
 
     if st.session_state.waiting:
         st.markdown(
