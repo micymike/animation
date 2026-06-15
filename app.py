@@ -144,18 +144,7 @@ with cols[0]:
     )
 
 if not st.session_state.index_ready:
-    st.warning(f"Index problem: {st.session_state.index_error}")
-    if st.button("Build Index Now", type="primary"):
-        from rag import build_index
-
-        with st.spinner("Extracting text, chunking, and embedding locally..."):
-            try:
-                build_index(str(PDF_PATH), force_rebuild=True)
-                st.session_state.index_ready = True
-                st.session_state.index_error = None
-                st.rerun()
-            except Exception as e:
-                st.error(f"Failed: {e}")
+    st.error(f"Index not found: {st.session_state.index_error}")
     st.stop()
 
 
