@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 *.pdf
 .streamlit/secrets.toml
+.rag_index/embeddings.npy
+*.faiss

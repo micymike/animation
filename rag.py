@@ -8,7 +8,6 @@ from typing import Optional
 
 import pdfplumber
 import numpy as np
-import faiss
 from tiktoken import encoding_for_model
 from fastembed import TextEmbedding
 
@@ -17,7 +16,7 @@ EMBED_DIM = 384
 CHUNK_SIZE = 600
 CHUNK_OVERLAP = 120
 INDEX_DIR = Path(__file__).parent / ".rag_index"
-INDEX_FILE = INDEX_DIR / "index.faiss"
+EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"
 CHUNKS_FILE = INDEX_DIR / "chunks.pkl"
 
 _enc = encoding_for_model("gpt-3.5-turbo")
@@ -34,6 +33,12 @@ def _get_embedder() -> TextEmbedding:
 def _local_embed(texts: list[str]) -> list[list[float]]:
     embedder = _get_embedder()
     return [list(vec) for vec in embedder.embed(texts)]
+
+
+def _l2_normalize(arr: np.ndarray) -> np.ndarray:
+    norms = np.linalg.norm(arr, axis=1, keepdims=True)
+    norms[norms == 0] = 1
+    return arr / norms
 
 
 def _num_tokens(text: str) -> int:
@@ -77,7 +82,7 @@ def chunk_text(text: str) -> list[dict]:
 def build_index(pdf_path: str, force_rebuild=False):
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-    if INDEX_FILE.exists() and not force_rebuild:
+    if EMBEDDINGS_FILE.exists() and not force_rebuild:
         return load_index()
 
     print(f"Extracting text from {pdf_path}...")
@@ -101,44 +106,44 @@ def build_index(pdf_path: str, force_rebuild=False):
     embeddings = np.array(all_embeddings).astype("float32")
     print(f"Embedding shape: {embeddings.shape}")
 
-    dimension = embeddings.shape[1]
-    index = faiss.IndexFlatIP(dimension)
-    faiss.normalize_L2(embeddings)
-    index.add(embeddings)
+    embeddings = _l2_normalize(embeddings)
 
-    faiss.write_index(index, str(INDEX_FILE))
-    with open(INDEX_FILE.parent / "chunks.pkl", "wb") as f:
+    np.save(str(EMBEDDINGS_FILE), embeddings)
+    with open(CHUNKS_FILE, "wb") as f:
         pickle.dump(chunks, f)
-    print(f"Index saved to {INDEX_FILE}")
+    print(f"Index saved to {EMBEDDINGS_FILE}")
 
-    return index, chunks
+    return embeddings, chunks
 
 
 def load_index():
-    if not INDEX_FILE.exists():
+    if not EMBEDDINGS_FILE.exists():
         return None, None
-    index = faiss.read_index(str(INDEX_FILE))
-    with open(INDEX_FILE.parent / "chunks.pkl", "rb") as f:
+    embeddings = np.load(str(EMBEDDINGS_FILE))
+    with open(CHUNKS_FILE, "rb") as f:
         chunks = pickle.load(f)
-    return index, chunks
+    return embeddings, chunks
 
 
 def search(query: str, k: int = 5) -> list[dict]:
-    index, chunks = load_index()
-    if index is None:
+    embeddings, chunks = load_index()
+    if embeddings is None:
         return [{"text": "No index found. Run build_index() first.", "score": 0, "source": "system"}]
 
     emb = _local_embed([query])
     query_vec = np.array(emb).astype("float32")
-    faiss.normalize_L2(query_vec)
+    query_vec = _l2_normalize(query_vec)
 
-    scores, indices = index.search(query_vec, k)
+    similarities = np.dot(embeddings, query_vec.T).flatten()
+    top_k = np.argsort(similarities)[::-1][:k]
+
     results = []
-    for score, idx in zip(scores[0], indices[0]):
+    for idx in top_k:
+        score = float(similarities[idx])
         if idx < len(chunks) and score > 0.3:
             results.append({
                 "text": chunks[idx]["text"],
-                "score": float(score),
+                "score": score,
                 "source": f"Chunk {idx + 1}",
             })
     return results
