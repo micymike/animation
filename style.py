@@ -196,10 +196,23 @@ CSS = """
         border-radius: 10px !important;
         box-shadow: none !important;
     }
+    [data-testid="stChatInput"] [data-baseweb="textarea"],
+    [data-testid="stChatInput"] [data-baseweb="base-input"],
+    [data-testid="stChatInput"] div:has(> textarea) {
+        background: #111827 !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+    }
     [data-testid="stChatInput"] textarea,
+    [data-testid="stChatInput"] textarea:focus,
+    [data-testid="stChatInput"] textarea:active,
     [data-testid="stChatInput"] textarea::placeholder {
+        background: #111827 !important;
         color: #e2e8f0 !important;
         -webkit-text-fill-color: #e2e8f0 !important;
+        caret-color: #86efac !important;
+        box-shadow: none !important;
+        outline: none !important;
     }
     [data-testid="stChatInput"] textarea::placeholder {
         color: #94a3b8 !important;
@@ -208,6 +221,22 @@ CSS = """
     [data-testid="stChatInput"] button {
         background: rgba(34,197,94,0.14) !important;
         color: #86efac !important;
+    }
+    .stChatInput textarea,
+    .stChatInput textarea:focus,
+    .stChatInput textarea:active,
+    .stChatInput [data-baseweb="textarea"],
+    .stChatInput [data-baseweb="base-input"] {
+        background: #111827 !important;
+        color: #e2e8f0 !important;
+        -webkit-text-fill-color: #e2e8f0 !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    .stChatInput textarea::placeholder {
+        color: #94a3b8 !important;
+        -webkit-text-fill-color: #94a3b8 !important;
     }
 
     .stSelectbox>div>div {
