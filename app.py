@@ -2,6 +2,7 @@ import html
 import os
 import re
 
+import requests
 import streamlit as st
 
 from style import CSS
@@ -163,6 +164,22 @@ with info_col:
         "</div>",
         unsafe_allow_html=True,
     )
+    try:
+        _visitor_count = requests.get(
+            "https://api.countapi.xyz/hit/micymike-animation/visits",
+            timeout=3,
+        ).json().get("value", 0)
+    except Exception:
+        _visitor_count = None
+    if _visitor_count is not None:
+        st.markdown(
+            f'<div class="glass-card" style="margin-top:12px;text-align:center;">'
+            f'<div style="font-size:1.6rem;font-weight:700;color:#e2e8f0;">{_visitor_count:,}</div>'
+            f'<div style="font-size:0.72rem;color:#94a3b8;">visitors</div>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
     st.markdown(
         '<div class="glass-card" style="margin-top:12px;">'
         "<h3>How It Works</h3>"
