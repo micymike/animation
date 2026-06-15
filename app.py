@@ -174,8 +174,8 @@ with info_col:
     if _visitor_count is not None:
         st.markdown(
             f'<div class="glass-card" style="margin-top:12px;text-align:center;">'
-            f'<div style="font-size:1.6rem;font-weight:700;color:#e2e8f0;">{_visitor_count:,}</div>'
-            f'<div style="font-size:0.72rem;color:#94a3b8;">visitors</div>'
+            f'<div style="font-size:1.8rem;font-weight:800;color:#ffffff;">{_visitor_count:,}</div>'
+            f'<div style="font-size:0.72rem;color:#ffffff;opacity:0.6;">visitors</div>'
             f"</div>",
             unsafe_allow_html=True,
         )
